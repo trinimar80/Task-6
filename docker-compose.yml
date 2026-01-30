@@ -1,0 +1,75 @@
+version: '3.8'
+services:
+    postgres:
+        image: postgres:17
+        restart: always    
+        container_name: seminario_db
+        environment:
+            POSTGRES_USER: seminar_user
+            POSTGRES_PASSWORD: Toro1234
+            POSTGRES_DB: seminario_db
+            POSTGRES_INITDB_LOCALE: ru_RU.UTF-8
+
+        ports :
+            - "5432:5432"
+        volumes:
+          - postgres_data:/var/lib/postgresql/data
+          - ./init-scripts:/docker-entrypoint-initdb.d # Чтобы загрузить скрипт SQL1 - Para cargar script SQL1
+        networks:
+            - secure_network
+    vault:
+        image: hashicorp/vault:latest
+        container_name: vault_server
+        ports:
+            - "8200:8200"
+        environment:
+            VAULT_DEV_ROOT_TOKEN_ID: "root"
+            VAULT_ADDR: "http://0.0.0.0:8200"
+        cap_add:
+        - IPC_LOCK
+        networks:
+          - secure_network
+        volumes:
+            - ./vault/data:/vault/file
+            - ./vault/config:/vault/config
+    pinger:
+        build: . 
+        container_name: postgres_pinger
+
+        env_file:
+            - .env
+        environment:
+            VAULT_ADDR: "http://vault:8200"
+        volumes:
+            - .:/app
+        depends_on:
+            - postgres
+            - vault
+        
+        command: tail -f /dev/null
+        tty: true
+        networks:
+            - secure_network
+    app:   
+        build: 
+            context: .
+            dockerfile: dockerfile
+        volumes:
+            - pinger_data:/app/logs
+        
+        depends_on:
+            - postgres 
+            - vault
+        environment:
+            VAULT_ADDR: "http://vault:8200"
+        command: tail -f /dev/null 
+        networks:
+            - secure_network
+networks:
+    secure_network:
+        driver: bridge    
+volumes:
+    postgres_data:
+    pinger_data:
+        
+        
