@@ -10,7 +10,7 @@ def get_db_credentials():
     Connects to Vault using AppRole and retrieves DB credentials.
     Using 'hvac' 
     """
-    vault_url = os.getenv('VAULT_ADDR', 'http://vault:8200')
+    vault_url = os.getenv('VAULT_ADDR', 'http://vault_server:8200')
     role_id = os.getenv('VAULT_ROLE_ID')
     secret_id = os.getenv('VAULT_SECRET_ID')
 
